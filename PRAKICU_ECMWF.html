@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prakiraan Cuaca ECMWF - Kabupaten Karimun</title>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #e0f7fa;
+      font-family: Arial, sans-serif;
+    }
+    
+    /* Control Panel */
+    .control-panel {
+      background: #006BA6;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .control-panel h1 {
+      color: white;
+      margin: 0 0 20px 0;
+      text-align: center;
+      font-size: 24px;
+    }
+    
+    .control-wrapper {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .control-wrapper label {
+      color: white;
+      font-weight: bold;
+    }
+    
+    .control-wrapper select {
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+      background: white;
+      min-width: 250px;
+    }
+    
+    .control-wrapper button {
+      padding: 10px 25px;
+      font-size: 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .control-wrapper button:hover {
+      background-color: #218838;
+    }
+    
+    #downloadButton {
+      background-color: #007BFF;
+    }
+    
+    #downloadButton:hover {
+      background-color: #0056b3;
+    }
+    
+    /* Template */
+    .template {
+      width: 1080px;
+      height: 1350px;
+      margin: 20px auto;
+      position: relative;
+      background: url('https://i.postimg.cc/X7NgbTg5/revisitemplate.png') no-repeat center center;
+      background-size: contain;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    
+    /* Header Title */
+    .header-title {
+      position: absolute;
+      top: 150px;
+      left: 50px;
+      width: 100%;
+      text-align: center;
+      font-family: 'Verdana', sans-serif;
+      font-size: 26px;
+      color: #FFFFFF;
+      line-height: 1.4;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 4px #000000;
+      margin: 0 auto;
+      visibility: hidden;
+    }
+    
+    .content {
+      position: absolute;
+      top: 270px; 
+      left: 60px;
+      width: 960px; 
+    }
+    
+    h2 {
+      font-family: 'Raleway', sans-serif !important;
+      font-size: 23px;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      text-align: center;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 4px #000000;
+    }
+    
+    .periode {
+      font-family: 'Raleway', sans-serif !important;
+      font-size: 20px;
+      color: white;
+      margin-bottom: 20px;
+      text-align: center;
+      text-transform: uppercase;
+      transform: translateX(-20px);
+      text-shadow: 2px 2px 4px #000000;
+    }
+    
+    /* Grid 5 kolom (baris pertama) */
+    .container {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      background-color: transparent;
+    }
+    
+    /* Grid 4 kolom (baris kedua) */
+    .second-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      background-color: transparent;
+      margin-top: 5px;
+    }
+    
+    /* Kotak cuaca */
+    .cuaca-box {
+      border: 1px solid #00008B;
+      background-color: white;
+      border-radius: 35px;
+      padding: 6px;
+      text-align: center;
+      font-size: 14px;
+      font-family: 'Verdana', Gadget, sans-serif;
+      font-weight: bold;
+      color: black;
+      line-height: 1.2;
+      opacity: 0.85;
+    }
+    
+    .cuaca-box img {
+      width: 90px;
+      height: 80px;
+    }
+    
+    .icon-small {
+      width: 25px !important;
+      height: 25px !important;
+      vertical-align: middle;
+      margin-right: 3px;
+    }
+    
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 50px;
+      font-size: 18px;
+      color: #006BA6;
+    }
+    
+    /* Debug info */
+    .debug-info {
+      background: #f0f0f0;
+      padding: 10px;
+      margin: 10px auto;
+      width: 1080px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    
+    /* Hide template initially */
+    .template {
+      display: none;
+    }
+    
+    .template.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="control-panel">
+    <h1>Prakiraan Cuaca Model ECMWF - Kabupaten Karimun</h1>
+    <div class="control-wrapper">
+      <label for="kecamatanSelect">Pilih Kecamatan:</label>
+      <select id="kecamatanSelect">
+        <option value="">-- Pilih Kecamatan --</option>
+        <option value="karimun">Karimun</option>
+        <option value="meral">Meral</option>
+        <option value="tebing">Tebing</option>
+        <option value="belat">Belat</option>
+        <option value="ungar">Ungar</option>
+        <option value="kundur">Kundur</option>
+        <option value="kundur-utara">Kundur Utara</option>
+        <option value="kundur-barat">Kundur Barat</option>
+        <option value="durai">Durai</option>
+        <option value="moro">Moro</option>
+        <option value="buru">Buru</option>
+        <option value="meral-barat">Meral Barat</option>
+        <option value="meral-selatan">Meral Selatan</option>
+        <option value="sugie-besar">Sugie Besar</option>
+      </select>
+      <button onclick="tampilkanCuaca()">Tampilkan Prakiraan</button>
+      <button id="downloadButton" onclick="downloadImage()" style="display:none;">Download Gambar</button>
+    </div>
+  </div>
+
+  <div class="template" id="capture">
+    <div class="header-title">
+      BADAN METEOROLOGI KLIMATOLOGI DAN GEOFISIKA<br>
+      STASIUN METEOROLOGI KELAS IV RAJA HAJI ABDULLAH<br>
+      KAB. KARIMUN PROVINSI KEPULAUAN RIAU
+    </div>
+
+    <div class="content">
+      <h2 id="judulKecamatan">Prakiraan Cuaca Kec. _____</h2>
+      <div class="periode" id="periode"></div>
+      <div class="container" id="cuacaContainer"></div>
+      <div class="second-row" id="cuacaSecondRow"></div>
+    </div>
+  
+  </div>
+
+  <div class="loading" id="loading" style="display:none;">
+    <p>Mengambil data cuaca dari Open-Meteo...</p>
+  </div>
+
+  <div class="debug-info" id="debugInfo">
+    Status: Pilih kecamatan untuk melihat prakiraan cuaca
+  </div>
+
+  <!-- Library html2canvas untuk screenshot -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    // Koordinat untuk setiap kecamatan (berdasarkan kelurahan/desa perwakilan)
+    const kecamatanCoordinates = {
+      "karimun": { lat: 1.0833, lon: 103.4167, name: "Karimun" },
+      "meral": { lat: 0.9667, lon: 103.4333, name: "Meral" },
+      "tebing": { lat: 1.0833, lon: 103.4000, name: "Tebing" },
+      "belat": { lat: 0.7500, lon: 103.4167, name: "Belat" },
+      "ungar": { lat: 1.0000, lon: 103.5000, name: "Ungar" },
+      "kundur": { lat: 0.7833, lon: 103.6667, name: "Kundur" },
+      "kundur-utara": { lat: 0.8333, lon: 103.7000, name: "Kundur Utara" },
+      "kundur-barat": { lat: 0.7667, lon: 103.6333, name: "Kundur Barat" },
+      "durai": { lat: 0.8000, lon: 103.3333, name: "Durai" },
+      "moro": { lat: 0.6833, lon: 103.5000, name: "Moro" },
+      "buru": { lat: 0.5667, lon: 103.3333, name: "Buru" },
+      "meral-barat": { lat: 0.9500, lon: 103.4000, name: "Meral Barat" },
+      "meral-selatan": { lat: 0.9167, lon: 103.4167, name: "Meral Selatan" },
+      "sugie-besar": { lat: 0.5000, lon: 103.2500, name: "Sugie Besar" }
+    };
+
+    // Debug function
+    function updateDebugInfo(message) {
+      document.getElementById('debugInfo').innerHTML = message;
+    }
+
+    // Fungsi untuk mendownload gambar template
+    function downloadImage() {
+      const element = document.getElementById('capture');
+      const kecamatan = document.getElementById('kecamatanSelect').value;
+      const namaKecamatan = kecamatanCoordinates[kecamatan]?.name || 'Unknown';
+      
+      html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `prakiraan_cuaca_ecmwf_${namaKecamatan.toLowerCase().replace(/\s+/g, '_')}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+
+    // Icon mapping
+    const iconUrls = {
+      0: "https://i.postimg.cc/d06bBqzd/Cerah.png",
+      1: "https://i.postimg.cc/3RwPfsTq/Cerah-Berawan.png",
+      2: "https://i.postimg.cc/ydr2ML68/Berawan.png",
+      3: "https://i.postimg.cc/XqGt49Xc/Berawan-Tebal.png",
+      51: "https://i.postimg.cc/XqGt49Xc/Berawan-Tebal.png",
+      53: "https://i.postimg.cc/Hs5sty3y/Hujan-Ringan.png",
+      55: "https://i.postimg.cc/Hs5sty3y/Hujan-Ringan.png",
+      61: "https://i.postimg.cc/Hs5sty3y/Hujan-Ringan.png",
+      63: "https://i.postimg.cc/dQgVdBRF/Hujan-Sedang.png",
+      65: "https://i.postimg.cc/0jTFQrwg/Hujan-Lebat.png",
+      80: "https://i.postimg.cc/Hs5sty3y/Hujan-Ringan.png",
+      81: "https://i.postimg.cc/dQgVdBRF/Hujan-Sedang.png",
+      82: "https://i.postimg.cc/0jTFQrwg/Hujan-Lebat.png",
+      95: "https://i.postimg.cc/RCW0N8HG/Hujan-Petir.png",
+      96: "https://i.postimg.cc/RCW0N8HG/Hujan-Petir.png",
+      99: "https://i.postimg.cc/RCW0N8HG/Hujan-Petir.png"
+    };
+
+    const weatherDescriptions = {
+      0: "Cerah",
+      1: "Cerah Berawan",
+      2: "Berawan",
+      3: "Berawan Tebal",
+      51: "Berawan Tebal",
+      53: "Hujan Ringan",
+      55: "Hujan Ringan",
+      61: "Hujan Ringan",
+      63: "Hujan Sedang",
+      65: "Hujan Lebat",
+      80: "Hujan Ringan",
+      81: "Hujan Sedang",
+      82: "Hujan Lebat",
+      95: "Hujan Petir",
+      96: "Hujan Petir",
+      99: "Hujan Petir"
+    };
+
+    function getWindDirectionText(degree) {
+      if (degree >= 337.5 || degree < 22.5) return "Utara";
+      if (degree >= 22.5 && degree < 67.5) return "Timur Laut";
+      if (degree >= 67.5 && degree < 112.5) return "Timur";
+      if (degree >= 112.5 && degree < 157.5) return "Tenggara";
+      if (degree >= 157.5 && degree < 202.5) return "Selatan";
+      if (degree >= 202.5 && degree < 247.5) return "Barat Daya";
+      if (degree >= 247.5 && degree < 292.5) return "Barat";
+      return "Barat Laut";
+    }
+
+    async function fetchWeatherData(lat, lon) {
+      try {
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,rain,weather_code,wind_speed_10m,wind_direction_10m&models=ecmwf_ifs025&timezone=Asia%2FJakarta`;
+        
+        updateDebugInfo(`Mengambil data untuk koordinat: ${lat}, ${lon}...`);
+        
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error("Gagal mengambil data cuaca");
+        
+        const data = await response.json();
+        updateDebugInfo(`Data berhasil diambil dari Open-Meteo`);
+        return data;
+        
+      } catch (error) {
+        updateDebugInfo(`Error: ${error.message}`);
+        console.error(error);
+        return null;
+      }
+    }
+
+    async function tampilkanCuaca() {
+      const kecamatan = document.getElementById('kecamatanSelect').value;
+      
+      if (!kecamatan) {
+        alert('Silakan pilih kecamatan terlebih dahulu!');
+        return;
+      }
+      
+      const coords = kecamatanCoordinates[kecamatan];
+      
+      // Update judul
+      document.getElementById('judulKecamatan').innerText = `Prakiraan Cuaca Kec. ${coords.name}`;
+      
+      // Show loading
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('capture').classList.remove('active');
+      
+      const dataCuaca = await fetchWeatherData(coords.lat, coords.lon);
+      
+      if (!dataCuaca || !dataCuaca.hourly) {
+        updateDebugInfo("Error: Data cuaca tidak ditemukan atau bermasalah.");
+        document.getElementById('loading').style.display = 'none';
+        return;
+      }
+
+      const forecasts = dataCuaca.hourly.time.map((time, i) => ({
+        time: new Date(time),
+        temperature: dataCuaca.hourly.temperature_2m[i],
+        humidity: dataCuaca.hourly.relative_humidity_2m[i],
+        precipitation: dataCuaca.hourly.precipitation[i] || 0,
+        precipitationProbability: dataCuaca.hourly.precipitation_probability[i] || 0,
+        weatherCode: dataCuaca.hourly.weather_code[i],
+        windSpeed: dataCuaca.hourly.wind_speed_10m[i],
+        windDirection: getWindDirectionText(dataCuaca.hourly.wind_direction_10m[i])
+      }));
+
+      // Menyesuaikan data mulai jam 07:00 WIB pada hari berikutnya
+      const now = new Date();
+      const besokPagi = new Date(now);
+      besokPagi.setDate(now.getDate() + 1);
+      besokPagi.setHours(7, 0, 0, 0);
+
+      const startIndex = forecasts.findIndex(f => {
+        const t = f.time;
+        return (
+          t.getDate() === besokPagi.getDate() &&
+          t.getMonth() === besokPagi.getMonth() &&
+          t.getFullYear() === besokPagi.getFullYear() &&
+          t.getHours() === 7
+        );
+      });
+
+      if (startIndex === -1) {
+        updateDebugInfo("Data jam 07:00 besok tidak ditemukan.");
+        document.getElementById('loading').style.display = 'none';
+        return;
+      }
+
+      // Ambil 9 periode (tiap 3 jam)
+      const selectedForecasts = [];
+      for (let i = 0; i < 9; i++) {
+        const slice = forecasts.slice(startIndex + i * 3, startIndex + i * 3 + 3);
+        if (slice.length === 0) continue;
+        
+        const accumulatedPrecip = slice.reduce((sum, f) => sum + f.precipitation, 0).toFixed(1);
+        const avgProbability = Math.round(slice.reduce((sum, f) => sum + f.precipitationProbability, 0) / slice.length);
+
+        selectedForecasts.push({
+          ...slice[0],
+          precipitation: accumulatedPrecip,
+          precipitationProbability: avgProbability
+        });
+      }
+
+      // Tampilkan data ke grid
+      const container = document.getElementById("cuacaContainer");
+      const secondRow = document.getElementById("cuacaSecondRow");
+      container.innerHTML = "";
+      secondRow.innerHTML = "";
+
+      selectedForecasts.forEach((fc, idx) => {
+        const jam = fc.time.getHours().toString().padStart(2, '0');
+        const iconCuaca = iconUrls[fc.weatherCode] || "https://i.postimg.cc/ydr2ML68/Berawan.png";
+        const deskripsiCuaca = weatherDescriptions[fc.weatherCode] || "N/A";
+
+        const divCuaca = document.createElement("div");
+        divCuaca.className = "cuaca-box";
+        divCuaca.innerHTML = `
+          <p>${jam}:00 WIB</p>
+          <img src="${iconCuaca}" alt="Ikon Cuaca">
+          <p>${deskripsiCuaca}</p>
+          <p><img src="https://i.postimg.cc/hjwZV6Hk/iconSuhu.png" class="icon-small"> ${Math.round(fc.temperature)} °C</p>
+          <p><img src="https://i.postimg.cc/QN9yjN7h/icon-Kelembaban.png" class="icon-small"> ${fc.humidity} % Kelembapan</p>
+          <p><img src="https://i.postimg.cc/MHQP5twv/iconCH.png" class="icon-small"> ${fc.precipitation} mm Curah Hujan</p>
+          <p><img src="https://i.postimg.cc/qBPZqfcn/Icon-Angin.png" class="icon-small"> ${Math.round(fc.windSpeed)} Km/jam ${fc.windDirection}</p>
+          <p>${fc.precipitationProbability} % Potensi Hujan</p>
+        `;
+        
+        if (idx < 5) container.appendChild(divCuaca);
+        else secondRow.appendChild(divCuaca);
+      });
+
+      // Info periode
+      const tanggalSekarang = new Date();
+      const startDate = new Date(tanggalSekarang);
+      startDate.setDate(tanggalSekarang.getDate() + 1);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 1);
+
+      const periode = document.getElementById("periode");
+      periode.innerHTML = `
+        Berlaku Mulai: ${startDate.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} pukul 07:00 WIB <br>
+        Hingga: ${endDate.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} pukul 07:00 WIB
+      `;
+      
+      // Hide loading and show template
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('capture').classList.add('active');
+      document.getElementById('downloadButton').style.display = 'inline-block';
+      
+      updateDebugInfo(`Success: Displayed forecast for ${coords.name} using ECMWF model`);
+    }
+  </script>
+</body>
+</html>
