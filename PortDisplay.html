@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Cuaca Maritim - Posko Nataru 2025</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Oswald:wght@500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #0277bd;
+            --primary-dark: #01579b;
+            --secondary: #00838f;
+            --accent: #ff9800;
+            --danger: #e53935;
+            --success: #43a047;
+            --highlight-color: #ff1744;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0d1b2a 0%, #1b3a4b 50%, #006064 100%);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            height: 60px;
+            background: linear-gradient(90deg, #01579b, #0277bd, #0288d1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand img { height: 42px; }
+        .brand h1 { font-family: 'Oswald'; font-size: 1.3rem; color: white; text-transform: uppercase; }
+        .brand h2 { font-size: 0.8rem; color: rgba(255,255,255,0.9); font-weight: 400; }
+
+        .badge-posko {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            padding: 8px 25px;
+            border-radius: 25px;
+            font-family: 'Oswald';
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .time-box { text-align: right; color: white; }
+        .clock { font-family: 'Rajdhani'; font-size: 2.2rem; font-weight: 700; }
+        .date { font-size: 0.85rem; }
+
+        main { height: calc(100vh - 60px - 36px); position: relative; }
+
+        .slide {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: none;
+            padding: 8px;
+            gap: 8px;
+        }
+        .slide.active { display: grid; }
+
+        .slide-main-port { grid-template-rows: auto 1fr; }
+        .slide-other-ports { grid-template-columns: 38% 62%; }
+        .slide-water { grid-template-columns: 38% 62%; }
+        .slide-full { grid-template-columns: 1fr; }
+
+        .panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-head {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-head h3 { font-family: 'Oswald'; font-size: 1.1rem; }
+
+        .panel-body { flex: 1; position: relative; min-height: 0; overflow: hidden; }
+        .map-wrap { width: 100%; height: 100%; position: absolute; }
+
+        /* MAIN PORT with AWS */
+        .main-port-top {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-radius: 10px;
+            border: 4px solid var(--primary);
+            padding: 12px 15px;
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 15px;
+        }
+
+        .weather-icon-box {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            position: relative;
+        }
+        
+        .weather-icon-box .icon { font-size: 4rem; }
+        .weather-icon-box .icon.cerah { color: #FFD600; }
+        .weather-icon-box .icon.berawan { color: #78909c; }
+        .weather-icon-box .icon.hujan { color: #42a5f5; }
+        .weather-icon-box .icon.hujan-lebat { color: #1565c0; }
+        
+        .weather-icon-box .temp { font-family: 'Rajdhani'; font-size: 2.8rem; color: #e65100; font-weight: 700; line-height: 1; }
+        .weather-icon-box .desc { font-size: 1rem; color: #333; font-weight: 700; }
+
+        .aws-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #4caf50;
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        .main-port-info { display: flex; flex-direction: column; gap: 8px; }
+        
+        .main-port-header {
+            background: linear-gradient(90deg, #ff9800, #f57c00);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-family: 'Oswald';
+            font-size: 1.15rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .weather-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .wg-item {
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .wg-item .label { font-size: 0.85rem; color: #666; font-weight: 600; }
+        .wg-item .value { font-size: 1.2rem; font-weight: 800; color: var(--primary-dark); }
+
+        .wave-status-bar {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 800;
+            font-size: 1.3rem;
+        }
+
+        /* FORECAST */
+        .forecast-section {
+            background: white;
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .forecast-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--primary-dark);
+            font-family: 'Oswald';
+        }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            flex: 1;
+        }
+
+        .fc-card {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 8px 5px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+        }
+        .fc-card.active {
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .fc-time { font-weight: 900; font-size: 1.5rem; line-height: 1; }
+        .fc-date { font-size: 0.9rem; opacity: 0.9; font-weight: 600; }
+        .fc-icon { font-size: 2rem; margin: 4px 0; }
+        .fc-icon.cerah { color: #FFD600; }
+        .fc-icon.berawan { color: #78909c; }
+        .fc-icon.hujan { color: #42a5f5; }
+        .fc-card.active .fc-icon { color: white; }
+        .fc-temp { font-weight: 900; font-size: 1.4rem; color: #e65100; }
+        .fc-card.active .fc-temp { color: #FFD600; }
+        .fc-wave { font-size: 1rem; padding: 4px 8px; border-radius: 6px; color: white; font-weight: 800; }
+        .fc-wind { font-size: 1rem; font-weight: 800; color: #333; }
+        .fc-card.active .fc-wind { color: rgba(255,255,255,0.95); }
+        .fc-extra { font-size: 0.9rem; color: #444; line-height: 1.2; font-weight: 700; }
+        .fc-card.active .fc-extra { color: rgba(255,255,255,0.9); }
+
+        /* LIST */
+        .list-section {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .list-header {
+            background: linear-gradient(90deg, #00695c, #004d40);
+            color: white;
+            padding: 10px 15px;
+            font-family: 'Oswald';
+            font-size: 1.05rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-controls { display: flex; gap: 5px; }
+        .list-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(255,255,255,0.2); color: white; cursor: pointer; }
+        .list-btn:hover { background: rgba(255,255,255,0.4); }
+
+        .list-scroll { flex: 1; overflow: hidden; position: relative; }
+        .list-track { position: absolute; width: 100%; transition: transform 0.5s ease; }
+
+        .port-card {
+            padding: 12px 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .port-card:nth-child(even) { background: #f8f9fa; }
+        .port-card.active {
+            background: linear-gradient(90deg, #ffebee, #ffcdd2) !important;
+            border-left: 8px solid var(--highlight-color);
+        }
+
+        .port-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .port-name { font-weight: 900; font-size: 1.25rem; color: #0d47a1; }
+        .port-time { font-size: 1rem; color: white; background: var(--primary); padding: 5px 15px; border-radius: 15px; font-weight: 800; }
+
+        .port-data-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 8px; }
+        .port-data-item { text-align: center; padding: 6px 4px; background: #f5f5f5; border-radius: 6px; }
+        .port-data-item .label { font-size: 0.8rem; color: #666; font-weight: 600; }
+        .port-data-item .value { font-size: 1.05rem; font-weight: 900; color: var(--primary-dark); }
+        .port-data-item.wave-badge .value { color: white; padding: 3px 10px; border-radius: 8px; }
+
+        .port-forecast-row { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; background: #e3f2fd; padding: 8px; border-radius: 6px; }
+        .port-fc-item { text-align: center; padding: 5px 3px; background: white; border-radius: 4px; font-size: 0.9rem; }
+        .port-fc-item.current { background: var(--primary); color: white; font-weight: 800; }
+
+        /* WATER */
+        .water-card {
+            background: white;
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin: 8px 10px;
+            border-left: 8px solid #2196F3;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+        }
+        .water-card.active {
+            border-left-color: var(--highlight-color) !important;
+            box-shadow: 0 0 0 3px var(--highlight-color);
+            background: #ffebee;
+        }
+
+        .water-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .water-name { font-weight: 900; font-size: 1.3rem; color: #0d47a1; }
+        .water-code { font-size: 1rem; background: #e0e0e0; padding: 5px 12px; border-radius: 8px; font-weight: 800; }
+
+        .water-info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 1.05rem; font-weight: 700; padding: 8px 12px; background: #f5f5f5; border-radius: 6px; }
+
+        .water-forecast-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .wf-day { text-align: center; padding: 10px 6px; background: #f5f5f5; border-radius: 8px; }
+        .wf-day.today { color: white; }
+        .wf-label { font-weight: 900; font-size: 1rem; }
+        .wf-icon { font-size: 1.6rem; margin: 4px 0; }
+        .wf-icon.cerah { color: #FFD600; }
+        .wf-icon.berawan { color: #78909c; }
+        .wf-icon.hujan { color: #42a5f5; }
+        .wf-day.today .wf-icon { color: white; }
+        .wf-wind { font-size: 0.95rem; font-weight: 700; }
+        .wf-wave { font-weight: 900; font-size: 1.25rem; }
+        .wf-cat { font-size: 0.9rem; font-weight: 700; }
+
+        /* NOWCAST */
+        .nowcast-panel {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border-radius: 10px;
+            padding: 10px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .nowcast-title { 
+            text-align: center; 
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+        .nowcast-title h2 { font-family: 'Oswald'; font-size: 1.5rem; color: var(--danger); }
+
+        .nowcast-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .nowcast-box { 
+            background: white; 
+            border-radius: 10px; 
+            padding: 10px; 
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1); 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden;
+            min-height: 0;
+        }
+        .nowcast-box.warning { border-left: 6px solid var(--danger); }
+        .nowcast-box.maritime { border-left: 6px solid var(--accent); }
+        .nowcast-box.safety { border-left: 6px solid var(--success); }
+        .nowcast-box.info { border-left: 6px solid var(--primary); }
+
+        .nowcast-box-title { 
+            font-family: 'Oswald'; 
+            font-size: 1rem; 
+            margin-bottom: 8px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .nowcast-content { 
+            flex: 1; 
+            overflow-y: auto; 
+            font-size: 0.9rem; 
+            line-height: 1.4;
+            min-height: 0;
+        }
+        
+        .nowcast-active { 
+            padding: 8px; 
+            background: #ffebee; 
+            color: #c62828; 
+            border-radius: 8px;
+        }
+        .nowcast-active h4 { margin-bottom: 6px; font-size: 1rem; }
+        .nowcast-active p { margin: 4px 0; font-size: 0.85rem; }
+
+        .area-list { display: flex; flex-wrap: wrap; gap: 5px; }
+        .area-tag { padding: 4px 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; }
+        .area-tag.sedang { background: #fff3e0; color: #e65100; }
+        .area-tag.tinggi { background: #ffebee; color: #c62828; }
+
+        .ship-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .ship-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #f5f5f5; border-radius: 6px; font-size: 0.85rem; }
+        .ship-item i { font-size: 1.2rem; }
+
+        /* IMAGE */
+        .img-panel-full {
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .img-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 15px;
+            position: relative;
+            min-height: 0;
+        }
+
+        .img-content img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+
+        .img-footer {
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .model-selector { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; z-index: 50; }
+        .model-btn { 
+            padding: 10px 16px; 
+            background: rgba(255,255,255,0.85); 
+            border: 2px solid transparent; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 700; 
+            font-size: 0.95rem; 
+            color: var(--primary-dark);
+            backdrop-filter: blur(5px);
+        }
+        .model-btn.active { background: var(--primary); color: white; border-color: var(--accent); }
+
+        .img-error { color: white; text-align: center; }
+        .img-error i { font-size: 3rem; color: #ff9800; margin-bottom: 10px; }
+        .img-error p { font-size: 1rem; }
+
+        /* NAV */
+        .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 70px; background: rgba(255,255,255,0.25); border: none; cursor: pointer; z-index: 100; color: white; font-size: 1.1rem; }
+        .nav-btn:hover { background: rgba(255,255,255,0.4); }
+        .nav-btn.left { left: 0; border-radius: 0 10px 10px 0; }
+        .nav-btn.right { right: 0; border-radius: 10px 0 0 10px; }
+
+        .dots { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; background: rgba(0,0,0,0.75); padding: 6px 15px; border-radius: 20px; z-index: 100; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; }
+        .dot.active { background: var(--accent); transform: scale(1.2); }
+        .dot-label { color: white; font-size: 0.9rem; margin-left: 10px; font-weight: 600; }
+
+        footer { height: 36px; background: linear-gradient(90deg, #1a237e, #263238); display: flex; align-items: center; }
+        .ticker-label { background: var(--danger); color: white; padding: 0 15px; height: 100%; display: flex; align-items: center; font-family: 'Oswald'; font-size: 0.95rem; }
+        .ticker-wrap { flex: 1; overflow: hidden; white-space: nowrap; }
+        .ticker-text { display: inline-block; padding-left: 100%; animation: ticker 60s linear infinite; color: white; font-size: 1rem; }
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+        .legend { position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.97); padding: 8px 10px; border-radius: 8px; font-size: 0.8rem; z-index: 400; box-shadow: 0 3px 12px rgba(0,0,0,0.25); }
+        .legend-title { font-weight: 800; margin-bottom: 4px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; margin: 2px 0; font-weight: 600; }
+        .legend-color { width: 22px; height: 8px; border-radius: 2px; }
+
+        .control-panel { 
+            position: fixed; 
+            bottom: 42px; 
+            right: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 6px; 
+            z-index: 500; 
+        }
+        .ctrl-btn { 
+            width: 42px; 
+            height: 42px; 
+            border-radius: 50%; 
+            background: rgba(255,255,255,0.7); 
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--primary); 
+            cursor: pointer; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 1rem; 
+            color: var(--primary);
+            opacity: 0.7;
+        }
+        .ctrl-btn:hover { background: var(--primary); color: white; opacity: 1; }
+        .ctrl-btn.active { background: var(--danger); border-color: var(--danger); color: white; opacity: 1; }
+
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 20px; border-radius: 12px; width: 350px; }
+        .modal-content h3 { margin-bottom: 15px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+        .form-group input[type="range"] { width: 100%; }
+        .val-display { text-align: center; font-weight: 700; color: var(--primary); }
+        .btn-save { width: 100%; padding: 10px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+        .bg-tenang { background: linear-gradient(135deg, #2196F3, #1976d2) !important; }
+        .bg-rendah { background: linear-gradient(135deg, #4CAF50, #388e3c) !important; }
+        .bg-sedang { background: linear-gradient(135deg, #FF9800, #f57c00) !important; }
+        .bg-tinggi { background: linear-gradient(135deg, #f44336, #d32f2f) !important; }
+
+        .weather-marker { background: white; border-radius: 50%; padding: 6px; box-shadow: 0 3px 12px rgba(0,0,0,0.4); border: 3px solid; }
+        .weather-marker i { font-size: 1.2rem; }
+        .weather-marker.highlight { border-color: var(--highlight-color) !important; animation: markerPulse 0.8s infinite; }
+        @keyframes markerPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+
+        .pause-indicator { position: fixed; top: 65px; left: 15px; background: rgba(244,67,54,0.9); color: white; padding: 6px 12px; border-radius: 15px; font-size: 0.85rem; font-weight: 700; z-index: 500; display: none; }
+        .pause-indicator.show { display: flex; align-items: center; gap: 6px; }
+
+        .refresh-indicator { position: fixed; top: 65px; right: 60px; background: rgba(76,175,80,0.9); color: white; padding: 6px 12px; border-radius: 15px; font-size: 0.85rem; font-weight: 700; z-index: 500; display: none; }
+        .refresh-indicator.show { display: flex; align-items: center; gap: 6px; }
+
+        .next-refresh { 
+            position: fixed; 
+            top: 65px; 
+            left: 15px; 
+            background: rgba(33,150,243,0.85); 
+            backdrop-filter: blur(5px);
+            color: white; 
+            padding: 4px 10px; 
+            border-radius: 12px; 
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            z-index: 500;
+            opacity: 0.8;
+        }
+
+        .nowcast-info-item { margin-bottom: 6px; }
+        .nowcast-info-item strong { color: #333; }
+        .nowcast-info-item a { color: var(--primary); font-weight: 700; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <img src="https://cdn.bmkg.go.id/Web/Logo-BMKG-new.png" alt="BMKG">
+        <div>
+            <h1>Stasiun Meteorologi Raja Haji Abdullah</h1>
+            <h2>Tanjung Balai Karimun - Kepulauan Riau</h2>
+        </div>
+    </div>
+    <div class="badge-posko"><i class="fas fa-ship"></i> POSKO NATARU 2025</div>
+    <div class="time-box">
+        <div class="clock" id="clock">00:00:00</div>
+        <div class="date" id="date">Loading...</div>
+    </div>
+</header>
+
+<div class="pause-indicator" id="pause-indicator"><i class="fas fa-pause"></i> JEDA</div>
+<div class="refresh-indicator" id="refresh-indicator"><i class="fas fa-sync-alt fa-spin"></i> Memperbarui...</div>
+<div class="next-refresh" id="next-refresh"><i class="fas fa-clock"></i> Refresh: --:--</div>
+
+<main>
+    <button class="nav-btn left" onclick="prevSlide()"><i class="fas fa-chevron-left"></i></button>
+    <button class="nav-btn right" onclick="goNextSlide()"><i class="fas fa-chevron-right"></i></button>
+
+    <!-- SLIDE 1: Main Port with AWS -->
+    <div class="slide slide-main-port active" id="slide-1">
+        <div class="main-port-top">
+            <div class="weather-icon-box">
+                <div class="aws-badge" id="aws-badge">AWS LIVE</div>
+                <div class="icon hujan" id="kc-icon"><i class="fas fa-cloud-rain"></i></div>
+                <div class="temp" id="kc-temp">28°C</div>
+                <div class="desc" id="kc-desc">Hujan Ringan</div>
+            </div>
+            <div class="main-port-info">
+                <div class="main-port-header">
+                    <span><i class="fas fa-anchor"></i> PEL. INTERNASIONAL TANJUNG BALAI KARIMUN</span>
+                    <span id="main-port-datetime">Loading...</span>
+                </div>
+                <div class="weather-grid">
+                    <div class="wg-item"><div class="label"><i class="fas fa-wind"></i> Angin</div><div class="value" id="kc-wind">Utara 8 kt</div></div>
+                    <div class="wg-item"><div class="label"><i class="fas fa-water"></i> Gelombang</div><div class="value" id="kc-wave">0.3 m</div></div>
+                    <div class="wg-item"><div class="label"><i class="fas fa-compass"></i> Arah Angin</div><div class="value" id="kc-winddir">321°</div></div>
+                    <div class="wg-item"><div class="label"><i class="fas fa-tint"></i> Kelembaban</div><div class="value" id="kc-rh">76%</div></div>
+                    <div class="wg-item"><div class="label"><i class="fas fa-tachometer-alt"></i> Tekanan</div><div class="value" id="kc-pressure">1010 hPa</div></div>
+                    <div class="wg-item"><div class="label"><i class="fas fa-thermometer-half"></i> Suhu Air</div><div class="value" id="kc-watertemp">29°C</div></div>
+                    <div class="wg-item"><div class="label"><i class="fas fa-cloud-rain"></i> Curah Hujan</div><div class="value" id="kc-rain">0 mm</div></div>
+                    <div class="wg-item"><div class="label"><i class="fas fa-ruler-vertical"></i> Muka Air</div><div class="value" id="kc-waterlevel">6.5 m</div></div>
+                </div>
+                <div class="wave-status-bar bg-tenang" id="kc-bar"><i class="fas fa-ship"></i> KONDISI LAUT: TENANG</div>
+            </div>
+        </div>
+        <div class="forecast-section">
+            <div class="forecast-title"><i class="fas fa-clock"></i> PRAKIRAAN PER 3 JAM - PEL. TANJUNG BALAI KARIMUN (dari BMKG)</div>
+            <div class="forecast-grid" id="fc-grid"></div>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: Ports -->
+    <div class="slide slide-other-ports" id="slide-2">
+        <div class="panel">
+            <div class="panel-head"><h3><i class="fas fa-anchor"></i> Peta Pelabuhan</h3><span id="port-count">30 Pelabuhan</span></div>
+            <div class="panel-body">
+                <div class="map-wrap" id="map-port"></div>
+                <div class="legend">
+                    <div class="legend-title">Tinggi Gelombang:</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#2196F3"></div>Tenang (0-0.5m)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#4CAF50"></div>Rendah (0.5-1.25m)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#FF9800"></div>Sedang (1.25-2.5m)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#f44336"></div>Tinggi (&gt;2.5m)</div>
+                </div>
+            </div>
+        </div>
+        <div class="list-section">
+            <div class="list-header">
+                <span><i class="fas fa-list"></i> PELABUHAN</span>
+                <span id="update-time">--:--</span>
+                <div class="list-controls">
+                    <button class="list-btn" onclick="scrollPortList(-1)"><i class="fas fa-chevron-up"></i></button>
+                    <button class="list-btn" onclick="scrollPortList(1)"><i class="fas fa-chevron-down"></i></button>
+                </div>
+            </div>
+            <div class="list-scroll"><div class="list-track" id="port-list"></div></div>
+        </div>
+    </div>
+
+    <!-- SLIDE 3: Waters -->
+    <div class="slide slide-water" id="slide-3">
+        <div class="panel">
+            <div class="panel-head"><h3><i class="fas fa-water"></i> Peta Perairan</h3><span id="water-count">20 Perairan</span></div>
+            <div class="panel-body">
+                <div class="map-wrap" id="map-sea"></div>
+                <div class="legend">
+                    <div class="legend-title">Tinggi Gelombang:</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#2196F3"></div>Tenang (0-0.5m)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#4CAF50"></div>Rendah (0.5-1.25m)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#FF9800"></div>Sedang (1.25-2.5m)</div>
+                    <div class="legend-item"><div class="legend-color" style="background:#f44336"></div>Tinggi (&gt;2.5m)</div>
+                </div>
+            </div>
+        </div>
+        <div class="list-section">
+            <div class="list-header" style="background: linear-gradient(90deg, #01579b, #0277bd);">
+                <span><i class="fas fa-chart-area"></i> PRAKIRAAN PERAIRAN</span>
+                <div class="list-controls">
+                    <button class="list-btn" onclick="scrollWaterList(-1)"><i class="fas fa-chevron-up"></i></button>
+                    <button class="list-btn" onclick="scrollWaterList(1)"><i class="fas fa-chevron-down"></i></button>
+                </div>
+            </div>
+            <div class="list-scroll"><div class="list-track" id="water-list"></div></div>
+        </div>
+    </div>
+
+    <!-- SLIDE 4: RADAR - FIXED -->
+    <div class="slide slide-full" id="slide-4">
+        <div class="img-panel-full">
+            <div class="panel-head"><h3><i class="fas fa-broadcast-tower"></i> Citra Radar Cuaca CMAX - Batam</h3></div>
+            <div class="img-content" id="radar-content">
+                <img id="radar-img" src="" alt="Radar Batam">
+            </div>
+            <div class="img-footer"><span>Reflektivitas radar</span><span>BMKG Radar Batam</span></div>
+        </div>
+    </div>
+
+    <!-- SLIDE 5: MODEL H+1 -->
+    <div class="slide slide-full" id="slide-5">
+        <div class="img-panel-full">
+            <div class="panel-head"><h3><i class="fas fa-map"></i> Peta Model Cuaca Maritim (H+1)</h3><span id="model-label">Tinggi Gelombang</span></div>
+            <div class="img-content" id="model-content"></div>
+            <div class="img-footer"><span id="model-info"><i class="fas fa-info-circle"></i> Tinggi Gelombang</span><span id="model-time"><i class="fas fa-clock"></i> Run: --</span></div>
+        </div>
+    </div>
+
+    <!-- SLIDE 6: SATELIT -->
+    <div class="slide slide-full" id="slide-6">
+        <div class="img-panel-full">
+            <div class="panel-head"><h3><i class="fas fa-satellite"></i> Citra Satelit Himawari</h3></div>
+            <div class="img-content"><img id="sat-img" src="https://inderaja.bmkg.go.id/IMAGE/HIMA/H08_EH_Kepri.png" alt="Satelit"></div>
+            <div class="img-footer"><span>Warna terang = awan tinggi</span><span>Himawari-8 JMA</span></div>
+        </div>
+    </div>
+
+    <!-- SLIDE 7: NOWCAST -->
+    <div class="slide slide-full" id="slide-7">
+        <div class="nowcast-panel" id="nowcast-panel"></div>
+    </div>
+
+    <div class="dots">
+        <div class="dot active" onclick="goSlide(1)"></div>
+        <div class="dot" onclick="goSlide(2)"></div>
+        <div class="dot" onclick="goSlide(3)"></div>
+        <div class="dot" onclick="goSlide(4)"></div>
+        <div class="dot" onclick="goSlide(5)"></div>
+        <div class="dot" onclick="goSlide(6)"></div>
+        <div class="dot" onclick="goSlide(7)"></div>
+        <span class="dot-label" id="dot-label">1/7 Pelabuhan Utama</span>
+    </div>
+</main>
+
+<footer>
+    <div class="ticker-label"><i class="fas fa-info-circle"></i> INFO</div>
+    <div class="ticker-wrap"><span class="ticker-text" id="ticker">Loading...</span></div>
+</footer>
+
+<div class="control-panel">
+    <button class="ctrl-btn" id="btn-pause" onclick="togglePause()" title="Pause/Play"><i class="fas fa-pause"></i></button>
+    <button class="ctrl-btn" onclick="zoomPage(1.1)" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+    <button class="ctrl-btn" onclick="zoomPage(0.9)" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+    <button class="ctrl-btn" onclick="manualRefresh()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+    <button class="ctrl-btn" onclick="openModal()" title="Settings"><i class="fas fa-cog"></i></button>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-cog"></i> Pengaturan Display</h3>
+        <div class="form-group">
+            <label>Kecepatan Slide (detik):</label>
+            <input type="range" id="inp-speed" min="5" max="60" value="15" oninput="document.getElementById('speed-val').textContent = this.value + 's'">
+            <div class="val-display" id="speed-val">15s</div>
+        </div>
+        <div class="form-group">
+            <label>Auto Refresh (menit):</label>
+            <input type="range" id="inp-refresh" min="1" max="30" value="5" oninput="document.getElementById('refresh-val').textContent = this.value + ' menit'">
+            <div class="val-display" id="refresh-val">5 menit</div>
+        </div>
+        <button class="btn-save" onclick="saveSettings()">Simpan</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ============================================
+// CONFIG
+// ============================================
+let current = 1, total = 7, slideSpeed = 15000, isPaused = false, timer;
+let fcIdx = 0, portIdx = 0, waterIdx = 0, currentModel = 'swh', modelIdx = 0, pageZoom = 1;
+const LABELS = ['Pelabuhan Utama', 'Pelabuhan Lain', 'Perairan', 'Radar', 'Model H+1', 'Satelit', 'Peringatan'];
+
+let AUTO_REFRESH_INTERVAL = 5 * 60 * 1000;
+let lastRefresh = Date.now();
+
+// AWS Data tracking for weather logic
+let awsData = null;
+let prevRain = 0;
+let rainIncreaseTime = null;
+let windCalmTime = null;
+let rainCalmTime = null;
+
+// CORS PROXIES
+const CORS_PROXIES = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?',
+    ''
+];
+
+// ============================================
+// ALL PORTS with CORRECT COORDINATES from petaperairan.txt
+// ============================================
+const PORTS = [
+    // KEPRI - 27 ports with correct coordinates
+    { code: 'XR023', name: 'Pel. Internasional Tanjung Balai Karimun', lat: 0.988535874, lon: 103.436420048, main: true },
+    { code: 'XR001', name: 'Pelabuhan Nongsapura', lat: 1.187951645, lon: 104.094681413 },
+    { code: 'XR002', name: 'Pelabuhan Batam Center', lat: 1.16491934200007, lon: 104.062610709 },
+    { code: 'XR003', name: 'Pelabuhan Harbour Bay', lat: 1.153287202, lon: 103.996803136 },
+    { code: 'XR004', name: 'Pelabuhan Telaga Punggur', lat: 1.03508302000005, lon: 104.132875093 },
+    { code: 'XR005', name: 'Pelabuhan Sekupang', lat: 1.124855, lon: 103.926713 },
+    { code: 'XR006', name: 'Pelabuhan Sekupang 2', lat: 1.12723011100007, lon: 103.9236681 },
+    { code: 'XR007', name: 'Pelabuhan Batu Ampar', lat: 1.16477794500002, lon: 104.002159585 },
+    { code: 'XR008', name: 'Pelabuhan Dermaga Roro Asdp Punggur', lat: 1.033865381, lon: 104.131419737 },
+    { code: 'XR009', name: 'Pelabuhan Tambelan', lat: 0.975353887, lon: 107.548145151 },
+    { code: 'XR010', name: 'Pelabuhan Jagoh', lat: -0.33392538499993, lon: 104.490347597 },
+    { code: 'XR011', name: 'Pelabuhan Sei Daik', lat: -0.216809998, lon: 104.623909165 },
+    { code: 'XR012', name: 'Pelabuhan Tanjung Buton', lat: -0.252826201, lon: 104.595039722 },
+    { code: 'XR013', name: 'Pelabuhan Sei Tenam', lat: -0.00654851599995, lon: 104.507024272 },
+    { code: 'XR014', name: 'Pelabuhan Dabo', lat: -0.500747924999928, lon: 104.565474926 },
+    { code: 'XR015', name: 'Pelabuhan Sri Bintan Pura', lat: 0.930765889, lon: 104.439959094 },
+    { code: 'XR016', name: 'Pelabuhan Sri Payung', lat: 0.932107854000037, lon: 104.461126151 },
+    { code: 'XR017', name: 'Pelabuhan Roro Dompak', lat: 0.86718997, lon: 104.483180238 },
+    { code: 'XR018', name: 'Pelabuhan Sri Bayintan (Kijang)', lat: 0.808723376000046, lon: 104.615095499 },
+    { code: 'XR019', name: 'Pelabuhan Bandar Bentan Telani (Lagoi)', lat: 1.160454622, lon: 104.320303792 },
+    { code: 'XR020', name: 'Pelabuhan Bandar Seri Udana (Lobam)', lat: 1.0021248, lon: 104.2555929 },
+    { code: 'XR021', name: 'Pelabuhan Bulang Linggi (Tg.Uban)', lat: 1.06338459600004, lon: 104.2171415 },
+    { code: 'XR022', name: 'Pelabuhan Roro Tg. Uban', lat: 1.062394886, lon: 104.219783524 },
+    { code: 'XR024', name: 'Pelabuhan Sri Tanjung Gelam', lat: 0.989015461, lon: 103.43385554 },
+    { code: 'XR025', name: 'Pelabuhan Cargo dan Roro Parit', lat: 1.004616404, lon: 103.353492504 },
+    { code: 'XR026', name: 'Pelabuhan Bintang 99', lat: 1.16048082437207, lon: 103.995463970211 },
+    { code: 'XR027', name: 'Pelabuhan Khusus Bea Cukai', lat: 0.992177, lon: 103.394469 },
+    // NEW PORTS - Belawan, Pekanbaru, Dumai
+    { code: 'XB001', name: 'Pelabuhan Belawan', lat: 3.79555315500005, lon: 98.71386105 },
+    { code: 'XC001', name: 'Pelabuhan Dumai', lat: 1.70003335523581, lon: 101.468511309208 },
+    { code: 'XC002', name: 'Pelabuhan Pekanbaru', lat: 1.28061485992583, lon: 102.189682564459 }
+];
+
+// ============================================
+// WATERS with NEW additions
+// ============================================
+const WATERS = [
+    // Existing Kepri waters
+    { code: 'P.R.01', name: 'Perairan Kep. Karimun', wave_cat: 'Tenang', wave_height: 0.5, wind: '8-15' },
+    { code: 'P.R.02', name: 'Perairan Kep. Batam', wave_cat: 'Tenang', wave_height: 0.5, wind: '8-14' },
+    { code: 'P.R.03', name: 'Perairan Kep. Bintan', wave_cat: 'Rendah', wave_height: 0.8, wind: '10-19' },
+    { code: 'P.R.04', name: 'Perairan Kep. Lingga', wave_cat: 'Rendah', wave_height: 0.6, wind: '8-15' },
+    { code: 'P.R.05', name: 'Perairan Kep. Tambelan', wave_cat: 'Rendah', wave_height: 0.8, wind: '10-13' },
+    { code: 'P.Q.01', name: 'Perairan Selatan Kep. Anambas', wave_cat: 'Sedang', wave_height: 1.4, wind: '12-19' },
+    { code: 'P.Q.02', name: 'Perairan Utara Kep. Anambas', wave_cat: 'Sedang', wave_height: 1.6, wind: '11-19' },
+    { code: 'P.Q.03', name: 'Perairan Kep. Natuna - Anambas', wave_cat: 'Sedang', wave_height: 1.6, wind: '11-18' },
+    { code: 'P.Q.04', name: 'Perairan Utara Kep. Natuna', wave_cat: 'Sedang', wave_height: 1.5, wind: '10-17' },
+    { code: 'P.Q.05', name: 'Perairan Barat Kep. Natuna', wave_cat: 'Sedang', wave_height: 1.7, wind: '11-18' },
+    { code: 'P.Q.06', name: 'Perairan Selatan Kep. Natuna', wave_cat: 'Sedang', wave_height: 1.2, wind: '10-17' },
+    { code: 'P.Q.07', name: 'Perairan Timur Kep. Natuna', wave_cat: 'Sedang', wave_height: 1.6, wind: '11-18' },
+    { code: 'P.Q.08', name: 'Perairan Kep. Subi - Serasan', wave_cat: 'Sedang', wave_height: 1.4, wind: '11-18' },
+    { code: 'M.17', name: 'Selat Karimata bagian utara', wave_cat: 'Sedang', wave_height: 1.3, wind: '10-16' },
+    { code: 'P.C.03', name: 'Perairan Kep. Meranti - Pelalawan', wave_cat: 'Tenang', wave_height: 0.4, wind: '6-12' },
+    { code: 'P.C.04', name: 'Perairan Indragiri Hilir', wave_cat: 'Rendah', wave_height: 0.5, wind: '6-12' },
+    // NEW WATERS
+    { code: 'P.B.01', name: 'Perairan Timur Sumatera Utara', wave_cat: 'Rendah', wave_height: 0.7, wind: '8-14' },
+    { code: 'M.02', name: 'Selat Malaka bagian tengah', wave_cat: 'Rendah', wave_height: 0.6, wind: '8-14' },
+    { code: 'P.C.01', name: 'Perairan Rokan Hilir', wave_cat: 'Tenang', wave_height: 0.4, wind: '6-12' },
+    { code: 'P.C.02', name: 'Perairan Dumai - Bengkalis', wave_cat: 'Tenang', wave_height: 0.5, wind: '6-12' }
+];
+
+const KEPRI_BOUNDS = [[-1.0, 101.0], [5.5, 109.5]];
+
+let mapPort, mapSea, portMarkers = [], seaPolygons = [];
+let portsData = {}, watersData = {}, geoData = null;
+let nowcastHTMLContent = '';
+
+// ============================================
+// UTILITY
+// ============================================
+function updateClock() {
+    const now = new Date();
+    const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    document.getElementById('clock').textContent = now.toLocaleTimeString('id-ID');
+    document.getElementById('date').textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    const dt = document.getElementById('main-port-datetime');
+    if(dt) dt.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} | ${String(now.getHours()).padStart(2,'0')}.${String(now.getMinutes()).padStart(2,'0')} WIB`;
+    updateNextRefreshDisplay();
+}
+
+function updateNextRefreshDisplay() {
+    const nextRefreshTime = new Date(lastRefresh + AUTO_REFRESH_INTERVAL);
+    const remaining = Math.max(0, nextRefreshTime - Date.now());
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    const el = document.getElementById('next-refresh');
+    if(el) el.innerHTML = `<i class="fas fa-clock"></i> Refresh: ${mins}:${String(secs).padStart(2,'0')}`;
+}
+
+function getWaveClass(c) { return { 'Tenang': 'bg-tenang', 'Rendah': 'bg-rendah', 'Sedang': 'bg-sedang', 'Tinggi': 'bg-tinggi' }[c] || 'bg-tenang'; }
+function getWaveColor(c) { return { 'Tenang': '#2196F3', 'Rendah': '#4CAF50', 'Sedang': '#FF9800', 'Tinggi': '#f44336' }[c] || '#2196F3'; }
+function getWeatherIcon(w) { if(!w) return 'fa-cloud'; if(w.includes('Lebat')) return 'fa-cloud-showers-heavy'; if(w.includes('Hujan')) return 'fa-cloud-rain'; if(w.includes('Cerah')) return 'fa-cloud-sun'; if(w.includes('Tebal')) return 'fa-cloud'; return 'fa-cloud'; }
+function getIconClass(w) { if(!w) return 'berawan'; if(w.includes('Cerah')) return 'cerah'; if(w.includes('Hujan')) return 'hujan'; return 'berawan'; }
+function safe(v, d) { return (v !== undefined && v !== null && v !== '' && !Number.isNaN(v)) ? v : d; }
+
+function getWindDirection(deg) {
+    const dirs = ['Utara', 'Timur Laut', 'Timur', 'Tenggara', 'Selatan', 'Barat Daya', 'Barat', 'Barat Laut'];
+    return dirs[Math.round(deg / 45) % 8];
+}
+
+// ============================================
+// FETCH
+// ============================================
+async function fetchWithProxy(url) {
+    for(let i = 0; i < CORS_PROXIES.length; i++) {
+        try {
+            const proxyUrl = CORS_PROXIES[i] + encodeURIComponent(url);
+            const actualUrl = CORS_PROXIES[i] ? proxyUrl : url;
+            const r = await fetch(actualUrl, { cache: 'no-store' });
+            if(r.ok) return await r.json();
+        } catch(e) { console.log('Proxy ' + i + ' failed'); }
+    }
+    return null;
+}
+
+async function fetchTextWithProxy(url) {
+    for(let i = 0; i < CORS_PROXIES.length; i++) {
+        try {
+            const proxyUrl = CORS_PROXIES[i] + encodeURIComponent(url);
+            const actualUrl = CORS_PROXIES[i] ? proxyUrl : url;
+            const r = await fetch(actualUrl, { cache: 'no-store' });
+            if(r.ok) return await r.text();
+        } catch(e) { console.log('Proxy ' + i + ' failed for text'); }
+    }
+    return null;
+}
+
+// ============================================
+// AWS MARITIM DATA INTEGRATION
+// ============================================
+async function loadAWSData() {
+    console.log('Loading AWS Maritim data...');
+    try {
+        const data = await fetchWithProxy('http://202.90.199.132/aws-new/data/station/latest/3000000023');
+        if(data) {
+            awsData = data;
+            console.log('AWS data loaded:', data);
+            updateAWSDisplay();
+        }
+    } catch(e) {
+        console.log('Failed to load AWS data:', e);
+    }
+}
+
+function determineWeatherFromAWS(aws, jsonWeather) {
+    if(!aws) return jsonWeather || 'Berawan';
+    
+    const rain = parseFloat(aws.rain) || 0;
+    const windSpeed = parseFloat(aws.windspeed) || 0;
+    const windKnots = windSpeed * 1.94384; // m/s to knots
+    
+    const now = Date.now();
+    
+    // Check rain condition
+    if(rain > prevRain) {
+        // Rain is increasing
+        const rainIncrease = rain - prevRain;
+        
+        if(rainIncrease > 5) {
+            prevRain = rain;
+            rainCalmTime = null;
+            return 'Hujan Lebat';
+        } else if(rainIncrease > 2) {
+            prevRain = rain;
+            rainCalmTime = null;
+            return 'Hujan Sedang';
+        } else if(rainIncrease > 0) {
+            prevRain = rain;
+            rainCalmTime = null;
+            return 'Hujan Ringan';
+        }
+    }
+    
+    // Check strong wind
+    if(windKnots > 13) {
+        windCalmTime = null;
+        return 'Berawan Tebal';
+    }
+    
+    // Check if conditions have calmed for 5 minutes
+    if(rain === prevRain && !rainCalmTime) {
+        rainCalmTime = now;
+    }
+    if(windKnots <= 13 && !windCalmTime) {
+        windCalmTime = now;
+    }
+    
+    const fiveMinutes = 5 * 60 * 1000;
+    const rainCalm = rainCalmTime && (now - rainCalmTime >= fiveMinutes);
+    const windCalm = windCalmTime && (now - windCalmTime >= fiveMinutes);
+    
+    if(rainCalm && windCalm) {
+        // Conditions improved, use JSON weather
+        return jsonWeather || 'Berawan';
+    }
+    
+    // Still monitoring
+    if(rain > 0) return 'Hujan Ringan';
+    if(windKnots > 10) return 'Berawan Tebal';
+    
+    return jsonWeather || 'Berawan';
+}
+
+function updateAWSDisplay() {
+    if(!awsData) return;
+    
+    const jsonData = portsData['XR023']?.forecast_day1?.[0];
+    const jsonWeather = jsonData?.weather || 'Berawan';
+    
+    // Determine weather based on AWS + JSON logic
+    const weather = determineWeatherFromAWS(awsData, jsonWeather);
+    
+    // Update display with AWS data
+    document.getElementById('kc-icon').innerHTML = `<i class="fas ${getWeatherIcon(weather)}"></i>`;
+    document.getElementById('kc-icon').className = 'icon ' + getIconClass(weather);
+    document.getElementById('kc-temp').textContent = parseFloat(awsData.temp).toFixed(1) + '°C';
+    document.getElementById('kc-desc').textContent = weather;
+    
+    const windKnots = (parseFloat(awsData.windspeed) * 1.94384).toFixed(1);
+    const windDir = getWindDirection(parseFloat(awsData.winddir));
+    document.getElementById('kc-wind').textContent = `${windDir} ${windKnots} kt`;
+    document.getElementById('kc-winddir').textContent = `${parseFloat(awsData.winddir).toFixed(0)}°`;
+    document.getElementById('kc-rh').textContent = parseFloat(awsData.rh).toFixed(0) + '%';
+    document.getElementById('kc-pressure').textContent = parseFloat(awsData.pressure).toFixed(1) + ' hPa';
+    document.getElementById('kc-watertemp').textContent = parseFloat(awsData.watertemp).toFixed(1) + '°C';
+    document.getElementById('kc-rain').textContent = parseFloat(awsData.rain).toFixed(1) + ' mm';
+    document.getElementById('kc-waterlevel').textContent = parseFloat(awsData.waterlevel).toFixed(2) + ' m';
+    
+    // Wave from JSON
+    const waveHeight = jsonData?.wave_height || 0.3;
+    const waveCat = jsonData?.wave_cat || 'Tenang';
+    document.getElementById('kc-wave').textContent = parseFloat(waveHeight).toFixed(1) + ' m';
+    
+    const bar = document.getElementById('kc-bar');
+    bar.className = 'wave-status-bar ' + getWaveClass(waveCat);
+    bar.innerHTML = `<i class="fas fa-ship"></i> KONDISI LAUT: ${waveCat.toUpperCase()}`;
+    
+    // Update AWS badge
+    const badge = document.getElementById('aws-badge');
+    if(badge) {
+        badge.style.background = '#4caf50';
+        badge.textContent = 'AWS LIVE';
+    }
+}
+
+// ============================================
+// LOAD DATA
+// ============================================
+async function loadData() {
+    console.log('Loading data...');
+    showRefreshIndicator();
+    
+    // Load GeoJSON for polygons
+    geoData = await fetchWithProxy('https://maritim.bmkg.go.id/marine-data/meta/wilmetos_w_port.json');
+    if(geoData) console.log('GeoJSON loaded:', geoData.features?.length, 'features');
+    
+    // Load AWS data for main port
+    await loadAWSData();
+    
+    // Load nowcast
+    await loadNowcast();
+    
+    // Load maritime data
+    await loadMaritimeData();
+    
+    // Generate fallback data
+    generateSimData();
+    
+    updateAll();
+    hideRefreshIndicator();
+    lastRefresh = Date.now();
+    
+    document.getElementById('port-count').textContent = PORTS.length + ' Pelabuhan';
+    document.getElementById('water-count').textContent = WATERS.length + ' Perairan';
+}
+
+async function loadMaritimeData() {
+    console.log('Loading maritime data...');
+    
+    for(const port of PORTS) {
+        try {
+            const data = await fetchWithProxy(`https://maritim.bmkg.go.id/marine-data/pelabuhan/${port.code}.json`);
+            if(data && data.forecast_day1) {
+                portsData[port.code] = data;
+                console.log(`Loaded port data for ${port.code}`);
+            }
+        } catch(e) {}
+    }
+    
+    for(const water of WATERS) {
+        try {
+            const data = await fetchWithProxy(`https://maritim.bmkg.go.id/marine-data/perairan/${water.code}.json`);
+            if(data && data.forecast_day1) {
+                watersData[water.code] = data;
+                const w = WATERS.find(w => w.code === water.code);
+                if(w && data.forecast_day1[0]) {
+                    w.wave_cat = data.forecast_day1[0].wave_cat || w.wave_cat;
+                    w.wave_height = data.forecast_day1[0].wave_height || w.wave_height;
+                }
+            }
+        } catch(e) {}
+    }
+}
+
+async function loadNowcast() {
+    try {
+        const html = await fetchTextWithProxy('https://www.bmkg.go.id/cuaca/peringatan-dini-cuaca/21');
+        if(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Extract relevant content
+            const allText = doc.body?.textContent || '';
+            const match = allText.match(/UPDATE.*?WIB[^]*?(?=Nowcasting|$)/i);
+            if(match) {
+                nowcastHTMLContent = match[0].substring(0, 800);
+            }
+        }
+    } catch(e) {
+        console.log('Nowcast load error:', e);
+    }
+}
+
+function generateSimData() {
+    const weathers = ['Cerah Berawan', 'Berawan', 'Hujan Ringan'];
+    PORTS.forEach(p => {
+        if(portsData[p.code]) return;
+        const fc = [];
+        for(let i = 0; i < 72; i++) {
+            const now = new Date(); now.setHours(now.getHours() + i);
+            fc.push({ time: now.toISOString(), weather: weathers[i%3], temp_avg: 27+Math.floor(Math.random()*3), rh_avg: 75+Math.floor(Math.random()*10), visibility: 8, wind_from: 'Utara', wind_speed: 6+Math.floor(Math.random()*6), wind_gust: 12+Math.floor(Math.random()*6), wave_cat: 'Tenang', wave_height: 0.3+Math.random()*0.3, current_to: 'Barat Laut', current_speed: 35+Math.floor(Math.random()*15), tides: 0.2 });
+        }
+        portsData[p.code] = { forecast_day1: fc };
+    });
+    WATERS.forEach(w => {
+        if(watersData[w.code]) return;
+        const fc = [];
+        for(let i = 0; i < 72; i++) {
+            const now = new Date(); now.setHours(now.getHours() + i);
+            fc.push({ time: now.toISOString(), weather: 'Berawan', wind_from: 'Utara', wind_speed: parseInt(w.wind.split('-')[0]), wind_gust: parseInt(w.wind.split('-')[1]), wave_cat: w.wave_cat, wave_height: w.wave_height, visibility: 10 });
+        }
+        watersData[w.code] = { forecast_day1: fc };
+    });
+}
+
+// ============================================
+// REFRESH
+// ============================================
+function showRefreshIndicator() { document.getElementById('refresh-indicator')?.classList.add('show'); }
+function hideRefreshIndicator() { document.getElementById('refresh-indicator')?.classList.remove('show'); }
+
+async function autoRefresh() {
+    if(Date.now() - lastRefresh >= AUTO_REFRESH_INTERVAL) await loadData();
+}
+
+async function manualRefresh() { await loadData(); }
+
+// ============================================
+// UPDATE
+// ============================================
+function updateAll() {
+    if(awsData) updateAWSDisplay();
+    else updateKarimun();
+    buildForecast();
+    buildPortList();
+    buildWaterList();
+    updateNowcast();
+    updateTicker();
+    updateRadar();
+    updateModel();
+    document.getElementById('update-time').textContent = new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+    if(mapPort) drawPortMarkers();
+    if(mapSea) drawSeaPolygons();
+}
+
+function updateKarimun() {
+    const d = portsData['XR023']?.forecast_day1?.[0];
+    if(!d) return;
+    document.getElementById('kc-icon').innerHTML = `<i class="fas ${getWeatherIcon(d.weather)}"></i>`;
+    document.getElementById('kc-icon').className = 'icon ' + getIconClass(d.weather);
+    document.getElementById('kc-temp').textContent = safe(d.temp_avg, 28) + '°C';
+    document.getElementById('kc-desc').textContent = safe(d.weather, 'Berawan');
+    document.getElementById('kc-wind').textContent = `${safe(d.wind_from, 'Utara')} ${safe(d.wind_speed, 8)} kt`;
+    document.getElementById('kc-wave').textContent = `${parseFloat(safe(d.wave_height, 0.3)).toFixed(1)} m`;
+    document.getElementById('kc-rh').textContent = safe(d.rh_avg, 75) + '%';
+    const bar = document.getElementById('kc-bar');
+    bar.className = 'wave-status-bar ' + getWaveClass(d.wave_cat);
+    bar.innerHTML = `<i class="fas fa-ship"></i> KONDISI LAUT: ${(d.wave_cat || 'TENANG').toUpperCase()}`;
+}
+
+function buildForecast() {
+    const fc = portsData['XR023']?.forecast_day1;
+    if(!fc) return;
+    const now = new Date();
+    let startH = Math.ceil(now.getHours()/3)*3; if(startH>=24) startH=0;
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+    let html = '';
+    for(let i = 0; i < 8; i++) {
+        const h = (startH + i*3) % 24;
+        const dayOff = Math.floor((startH + i*3)/24);
+        const date = new Date(now); date.setDate(date.getDate() + dayOff);
+        const f = fc[Math.min(i*3, fc.length-1)] || {};
+        html += `<div class="fc-card ${i===0?'active':''}">
+            <div class="fc-time">${String(h).padStart(2,'0')}.00</div>
+            <div class="fc-date">${date.getDate()} ${months[date.getMonth()]}</div>
+            <div class="fc-icon ${getIconClass(f.weather)}"><i class="fas ${getWeatherIcon(f.weather)}"></i></div>
+            <div class="fc-temp">${safe(f.temp_avg,27)}°C</div>
+            <div class="fc-wave ${getWaveClass(f.wave_cat)}">${parseFloat(safe(f.wave_height,0.3)).toFixed(1)}m</div>
+            <div class="fc-wind">${safe(f.wind_speed,6)}-${safe(f.wind_gust,12)} kt</div>
+            <div class="fc-extra">Vis: ${safe(f.visibility,10)} km</div>
+        </div>`;
+    }
+    document.getElementById('fc-grid').innerHTML = html;
+}
+
+function buildPortList() {
+    const others = PORTS.filter(p => !p.main);
+    let html = '';
+    others.forEach((p, idx) => {
+        const fc = portsData[p.code]?.forecast_day1;
+        const f = fc?.[0] || {};
+        let fcHtml = '';
+        const now = new Date();
+        let startH = Math.ceil(now.getHours()/3)*3; if(startH>=24) startH=0;
+        for(let i = 0; i < 8; i++) {
+            const h = (startH + i*3) % 24;
+            const fd = fc?.[Math.min(i*3, (fc?.length||1)-1)] || {};
+            fcHtml += `<div class="port-fc-item ${i===0?'current':''}">${String(h).padStart(2,'0')}.00<br>${parseFloat(safe(fd.wave_height,0.3)).toFixed(1)}m</div>`;
+        }
+        html += `<div class="port-card" data-idx="${idx}">
+            <div class="port-card-head"><div class="port-name">${p.name}</div><div class="port-time">${String(new Date().getHours()).padStart(2,'0')}.00 WIB</div></div>
+            <div class="port-data-grid">
+                <div class="port-data-item"><div class="label">Cuaca</div><div class="value"><i class="fas ${getWeatherIcon(f.weather)}"></i> ${safe(f.temp_avg,27)}°C</div></div>
+                <div class="port-data-item"><div class="label">Angin</div><div class="value">${safe(f.wind_speed,6)}-${safe(f.wind_gust,12)} kt</div></div>
+                <div class="port-data-item"><div class="label">Arus</div><div class="value">${safe(f.current_speed,40)} cm/s</div></div>
+                <div class="port-data-item"><div class="label">Vis</div><div class="value">${safe(f.visibility,10)} km</div></div>
+                <div class="port-data-item wave-badge"><div class="label">Gel</div><div class="value ${getWaveClass(f.wave_cat)}">${parseFloat(safe(f.wave_height,0.3)).toFixed(1)}m</div></div>
+            </div>
+            <div class="port-forecast-row">${fcHtml}</div>
+        </div>`;
+    });
+    document.getElementById('port-list').innerHTML = html + html;
+}
+
+function buildWaterList() {
+    let html = '';
+    const now = new Date();
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+    WATERS.forEach((w, idx) => {
+        const fc = watersData[w.code]?.forecast_day1;
+        const f = fc?.[0] || { wave_cat: w.wave_cat, wave_height: w.wave_height };
+        const color = getWaveColor(f.wave_cat || w.wave_cat);
+        let daysHtml = '';
+        for(let i = 0; i < 4; i++) {
+            const label = i===0 ? 'Hari Ini' : i===1 ? 'Besok' : (now.getDate()+i) + ' ' + months[now.getMonth()];
+            const fd = fc?.[Math.min(i*8, (fc?.length||1)-1)] || f;
+            daysHtml += `<div class="wf-day ${i===0?'today':''}" style="${i===0?'background:'+color:''}">
+                <div class="wf-label">${label}</div>
+                <div class="wf-icon ${getIconClass(fd.weather)}"><i class="fas ${getWeatherIcon(fd.weather)}"></i></div>
+                <div class="wf-wind">${safe(fd.wind_speed,10)}-${safe(fd.wind_gust,16)} kt</div>
+                <div class="wf-wave">${parseFloat(safe(fd.wave_height || w.wave_height, 0.5)).toFixed(1)}m</div>
+                <div class="wf-cat">${fd.wave_cat || w.wave_cat}</div>
+            </div>`;
+        }
+        html += `<div class="water-card" data-idx="${idx}" data-code="${w.code}" style="border-left-color:${color}">
+            <div class="water-card-head"><span class="water-name">${w.name}</span><span class="water-code">${w.code}</span></div>
+            <div class="water-info-row"><span><i class="fas fa-wind"></i> Angin: ${w.wind} kt</span><span><i class="fas fa-eye"></i> Vis: 10 km</span></div>
+            <div class="water-forecast-grid">${daysHtml}</div>
+        </div>`;
+    });
+    document.getElementById('water-list').innerHTML = html;
+}
+
+function updateNowcast() {
+    const highWaves = WATERS.filter(w => w.wave_cat === 'Sedang' || w.wave_cat === 'Tinggi');
+    const now = new Date();
+    const dateStr = `${now.getDate()} ${['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][now.getMonth()]} ${now.getFullYear()}`;
+    
+    let warningContent = nowcastHTMLContent ? 
+        `<div class="nowcast-active"><h4><i class="fas fa-exclamation-circle"></i> PERINGATAN AKTIF</h4><p style="white-space:pre-wrap;font-size:0.8rem;">${nowcastHTMLContent}</p></div>` :
+        `<div style="padding:15px;background:#e8f5e9;color:#2e7d32;border-radius:8px;text-align:center;"><i class="fas fa-check-circle" style="font-size:2rem;display:block;margin-bottom:8px;"></i><h4>Tidak Ada Peringatan Aktif</h4><p style="font-size:0.85rem;">Per ${dateStr}</p></div>`;
+    
+    document.getElementById('nowcast-panel').innerHTML = `
+        <div class="nowcast-title"><h2><i class="fas fa-exclamation-triangle"></i> PERINGATAN DINI CUACA & KESELAMATAN PELAYARAN</h2></div>
+        <div class="nowcast-grid">
+            <div class="nowcast-box warning"><div class="nowcast-box-title"><i class="fas fa-bolt" style="color:var(--danger)"></i> Peringatan Dini Cuaca</div><div class="nowcast-content">${warningContent}</div></div>
+            <div class="nowcast-box maritime"><div class="nowcast-box-title"><i class="fas fa-water" style="color:var(--accent)"></i> Peringatan Gelombang</div><div class="nowcast-content"><div class="area-list">${highWaves.length > 0 ? highWaves.map(a => `<span class="area-tag ${a.wave_cat==='Sedang'?'sedang':'tinggi'}">${a.name}: ${a.wave_height}m (${a.wave_cat})</span>`).join('') : '<span style="color:#666;">Tidak ada peringatan</span>'}</div></div></div>
+            <div class="nowcast-box safety"><div class="nowcast-box-title"><i class="fas fa-life-ring" style="color:var(--success)"></i> Info Keselamatan</div><div class="nowcast-content"><div class="ship-grid"><div class="ship-item"><i class="fas fa-ship" style="color:#1565c0"></i><span><strong>Perahu Nelayan</strong><br>Angin >15kt & Gel >1.25m</span></div><div class="ship-item"><i class="fas fa-truck-loading" style="color:#2e7d32"></i><span><strong>Kapal Tongkang</strong><br>Angin >16kt & Gel >1.5m</span></div><div class="ship-item"><i class="fas fa-ferry" style="color:#c62828"></i><span><strong>Kapal Ferry</strong><br>Angin >21kt & Gel >2.5m</span></div><div class="ship-item"><i class="fas fa-container-storage" style="color:#6a1b9a"></i><span><strong>Kapal Kargo</strong><br>Angin >27kt & Gel >4.0m</span></div></div></div></div>
+            <div class="nowcast-box info"><div class="nowcast-box-title"><i class="fas fa-info-circle" style="color:var(--primary)"></i> Sumber Informasi</div><div class="nowcast-content"><div class="nowcast-info-item"><strong>Data Cuaca:</strong> BMKG</div><div class="nowcast-info-item"><strong>Data AWS:</strong> Stamet Karimun</div><div class="nowcast-info-item"><a href="https://www.bmkg.go.id/cuaca/peringatan-dini-cuaca/21" target="_blank">➜ LIHAT BMKG NOWCAST</a></div><div class="nowcast-info-item" style="margin-top:6px;"><strong>Hotline:</strong> +62 812-7018-6433</div></div></div>
+        </div>`;
+}
+
+function updateTicker() {
+    const highWaves = WATERS.filter(w => w.wave_cat === 'Sedang' || w.wave_cat === 'Tinggi').map(w => w.name);
+    let text = 'Selamat datang di Display Cuaca Maritim Posko Nataru 2025 | Stasiun Meteorologi Raja Haji Abdullah | Total ' + PORTS.length + ' Pelabuhan & ' + WATERS.length + ' Perairan dipantau';
+    if(highWaves.length > 0) text += ' | ⚠️ GELOMBANG SEDANG: ' + highWaves.join(', ');
+    if(awsData) text += ' | 🌡️ AWS Live: ' + parseFloat(awsData.temp).toFixed(1) + '°C, Hujan: ' + parseFloat(awsData.rain).toFixed(1) + 'mm';
+    document.getElementById('ticker').textContent = text;
+}
+
+// ============================================
+// RADAR - FIXED
+// ============================================
+function updateRadar() {
+    const container = document.getElementById('radar-content');
+    if(!container) return;
+    
+    // Use direct URL without cache busting issues
+    const radarUrl = 'https://radar.bmkg.go.id/ANIMASI/CMAX_Batam.gif';
+    
+    container.innerHTML = `
+        <img id="radar-img" src="${radarUrl}" alt="Radar CMAX Batam" 
+            style="max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;"
+            onerror="handleRadarError()">
+    `;
+}
+
+function handleRadarError() {
+    const container = document.getElementById('radar-content');
+    if(container) {
+        container.innerHTML = `
+            <div class="img-error">
+                <i class="fas fa-broadcast-tower"></i>
+                <p>Radar Batam sedang tidak tersedia</p>
+                <p style="font-size:0.8rem;margin-top:10px;">Coba refresh halaman atau cek koneksi internet</p>
+                <button onclick="updateRadar()" style="margin-top:10px;padding:8px 15px;background:var(--primary);color:white;border:none;border-radius:5px;cursor:pointer;">
+                    <i class="fas fa-sync-alt"></i> Coba Lagi
+                </button>
+            </div>
+        `;
+    }
+}
+
+// ============================================
+// MODEL H+1
+// ============================================
+function updateModel() {
+    const container = document.getElementById('model-content');
+    if(!container) return;
+    
+    const now = new Date();
+    let mH = Math.floor(now.getUTCHours()/6)*6;
+    let mD = new Date(now);
+    if(now.getUTCHours()%6 < 4) { mH -= 6; if(mH < 0) { mH = 18; mD.setUTCDate(mD.getUTCDate()-1); } }
+    
+    const y = mD.getUTCFullYear();
+    const m = String(mD.getUTCMonth()+1).padStart(2,'0');
+    const d = String(mD.getUTCDate()).padStart(2,'0');
+    const h = String(mH).padStart(2,'0');
+    const folder = `${y}${m}${d}${h}`;
+    
+    // H+1 forecast
+    const fcTime = new Date(mD);
+    fcTime.setUTCDate(fcTime.getUTCDate() + 1);
+    fcTime.setUTCHours(12);
+    const fcY = fcTime.getUTCFullYear();
+    const fcM = String(fcTime.getUTCMonth()+1).padStart(2,'0');
+    const fcD = String(fcTime.getUTCDate()).padStart(2,'0');
+    const fcFolder = `${fcY}${fcM}${fcD}12`;
+    
+    const urls = { 
+        swh: `https://peta-maritim.bmkg.go.id/render-static/w3g/${y}/${m}/${folder}/batam/swh_${fcFolder}.png`, 
+        ws: `https://peta-maritim.bmkg.go.id/render-static/w3g/${y}/${m}/${folder}/batam/ws_${fcFolder}.png`, 
+        csd: `https://peta-maritim.bmkg.go.id/render-static/inaflows/${y}/${m}/${folder}/batam/csd_0_${fcFolder}.png` 
+    };
+    
+    const labels = { swh: 'Tinggi Gelombang (H+1)', ws: 'Kecepatan Angin (H+1)', csd: 'Kecepatan Arus (H+1)' };
+    
+    container.innerHTML = `
+        <div class="model-selector">
+            <button class="model-btn ${currentModel==='swh'?'active':''}" onclick="setModel('swh')"><i class="fas fa-water"></i> Gelombang</button>
+            <button class="model-btn ${currentModel==='ws'?'active':''}" onclick="setModel('ws')"><i class="fas fa-wind"></i> Angin</button>
+            <button class="model-btn ${currentModel==='csd'?'active':''}" onclick="setModel('csd')"><i class="fas fa-arrows-alt"></i> Arus</button>
+        </div>
+        <img src="${urls[currentModel]}" alt="Model" style="max-width:100%;max-height:100%;object-fit:contain;" onerror="this.style.display='none'">
+        <div style="position:absolute;bottom:10px;left:10px;background:rgba(0,0,0,0.7);color:white;padding:5px 10px;border-radius:5px;font-size:0.8rem;">
+            <i class="fas fa-calendar-day"></i> Prakiraan: ${fcD}/${fcM}/${fcY} 12:00 UTC (H+1)
+        </div>
+    `;
+    
+    document.getElementById('model-label').textContent = labels[currentModel];
+    document.getElementById('model-info').innerHTML = `<i class="fas fa-info-circle"></i> ${labels[currentModel]}`;
+    document.getElementById('model-time').innerHTML = `<i class="fas fa-clock"></i> Run: ${d}/${m}/${y} ${h}:00 UTC`;
+}
+
+function setModel(m) { currentModel = m; updateModel(); }
+function cycleModel() { if(current !== 5) return; const ms = ['swh', 'ws', 'csd']; modelIdx = (modelIdx+1)%ms.length; currentModel = ms[modelIdx]; updateModel(); }
+
+// ============================================
+// MAPS
+// ============================================
+function initMaps() {
+    mapPort = L.map('map-port', { zoomControl: false, attributionControl: false }).setView([1.5, 104.0], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(mapPort);
+    L.control.zoom({ position: 'bottomright' }).addTo(mapPort);
+
+    mapSea = L.map('map-sea', { zoomControl: false, attributionControl: false }).fitBounds(KEPRI_BOUNDS);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(mapSea);
+    L.control.zoom({ position: 'bottomright' }).addTo(mapSea);
+}
+
+function drawPortMarkers() {
+    portMarkers.forEach(m => mapPort.removeLayer(m.marker));
+    portMarkers = [];
+    const others = PORTS.filter(p => !p.main);
+    others.forEach((p, idx) => {
+        const f = portsData[p.code]?.forecast_day1?.[0] || {};
+        const cat = f.wave_cat || 'Tenang';
+        const color = getWaveColor(cat);
+        const icon = L.divIcon({ className: '', html: `<div class="weather-marker" style="border-color:${color}"><i class="fas ${getWeatherIcon(f.weather)}" style="color:${color}"></i></div>`, iconSize: [44, 44], iconAnchor: [22, 22] });
+        const marker = L.marker([p.lat, p.lon], { icon }).bindTooltip(`<strong>${p.name}</strong><br>Gel: ${cat} (${parseFloat(safe(f.wave_height,0.3)).toFixed(1)}m)`, { sticky: true }).addTo(mapPort);
+        portMarkers.push({ marker, idx, lat: p.lat, lon: p.lon, code: p.code });
+    });
+}
+
+function drawSeaPolygons() {
+    seaPolygons.forEach(p => { if(p.polygon) mapSea.removeLayer(p.polygon); if(p.label) mapSea.removeLayer(p.label); });
+    seaPolygons = [];
+    
+    if(geoData && geoData.features) {
+        const waterCodes = new Set(WATERS.map(w => w.code));
+        
+        const relevantFeatures = geoData.features.filter(f => {
+            const code = f.properties?.ID_MAR;
+            if(!code) return false;
+            return waterCodes.has(code) || code.startsWith('P.R.') || code.startsWith('P.Q.') || code.startsWith('P.C.') || code.startsWith('P.B.') || code === 'M.17' || code === 'M.02';
+        });
+        
+        relevantFeatures.forEach((feat, idx) => {
+            const code = feat.properties.ID_MAR;
+            const wInfo = WATERS.find(w => w.code === code) || { wave_cat: 'Tenang', wave_height: 0.5, wind: '8-14', name: feat.properties.perairan || code };
+            const color = getWaveColor(wInfo.wave_cat);
+            
+            try {
+                let coords = [];
+                if(feat.geometry.type === 'Polygon') {
+                    coords = feat.geometry.coordinates[0].map(c => {
+                        if(Array.isArray(c) && c.length >= 2 && !isNaN(c[0]) && !isNaN(c[1])) {
+                            return [c[1], c[0]];
+                        }
+                        return null;
+                    }).filter(c => c !== null);
+                } else if(feat.geometry.type === 'MultiPolygon') {
+                    coords = feat.geometry.coordinates[0][0].map(c => {
+                        if(Array.isArray(c) && c.length >= 2 && !isNaN(c[0]) && !isNaN(c[1])) {
+                            return [c[1], c[0]];
+                        }
+                        return null;
+                    }).filter(c => c !== null);
+                }
+                
+                if(coords.length < 3) return;
+                
+                const polygon = L.polygon(coords, {
+                    color: '#000000',
+                    weight: 2,
+                    fillColor: color,
+                    fillOpacity: 0.5
+                }).bindTooltip(`<strong>${wInfo.name}</strong><br>Gel: ${wInfo.wave_cat} (${wInfo.wave_height}m)`, { sticky: true }).addTo(mapSea);
+                
+                const center = polygon.getBounds().getCenter();
+                const label = L.marker(center, {
+                    icon: L.divIcon({
+                        className: '',
+                        html: `<div style="background:${color};color:white;padding:3px 8px;border-radius:6px;font-size:0.75rem;font-weight:bold;text-align:center;border:1px solid #000;box-shadow:0 2px 8px rgba(0,0,0,0.3)">${code}<br>${wInfo.wave_height}m</div>`,
+                        iconSize: [70, 38],
+                        iconAnchor: [35, 19]
+                    })
+                }).addTo(mapSea);
+                
+                seaPolygons.push({ polygon, label, code, name: wInfo.name });
+            } catch(e) {
+                console.log('Error drawing polygon for', code, e);
+            }
+        });
+    }
+}
+
+// ============================================
+// HIGHLIGHT
+// ============================================
+function highlightPortOnMap(idx) {
+    portMarkers.forEach(pm => pm.marker.getElement()?.querySelector('.weather-marker')?.classList.remove('highlight'));
+    if(portMarkers[idx]) { 
+        portMarkers[idx].marker.getElement()?.querySelector('.weather-marker')?.classList.add('highlight'); 
+        mapPort.flyTo([portMarkers[idx].lat, portMarkers[idx].lon], 10, { animate: true, duration: 0.5 }); 
+    }
+}
+
+function highlightWaterOnMap(idx) {
+    seaPolygons.forEach(sp => { if(sp.polygon) sp.polygon.setStyle({ weight: 2, fillOpacity: 0.5 }); });
+    const waterCode = WATERS[idx]?.code;
+    const matchingPolygon = seaPolygons.find(sp => sp.code === waterCode);
+    if(matchingPolygon && matchingPolygon.polygon) {
+        matchingPolygon.polygon.setStyle({ weight: 5, fillOpacity: 0.8 });
+        matchingPolygon.polygon.bringToFront();
+        mapSea.flyToBounds(matchingPolygon.polygon.getBounds(), { animate: true, duration: 0.5, padding: [50, 50] });
+    }
+}
+
+// ============================================
+// LIST SCROLL
+// ============================================
+function scrollPortList(dir) { const others = PORTS.filter(p => !p.main); portIdx = Math.max(0, Math.min(others.length-1, portIdx + dir)); animatePortListToIdx(portIdx); }
+function scrollWaterList(dir) { waterIdx = Math.max(0, Math.min(WATERS.length-1, waterIdx + dir)); animateWaterListToIdx(waterIdx); }
+
+function animatePortListToIdx(idx) {
+    const list = document.getElementById('port-list'); if(!list) return;
+    const items = list.querySelectorAll('.port-card');
+    items.forEach(it => it.classList.remove('active'));
+    const others = PORTS.filter(p => !p.main);
+    const target = idx % others.length;
+    if(items[target]) items[target].classList.add('active');
+    if(items[target + others.length]) items[target + others.length].classList.add('active');
+    list.style.transform = `translateY(-${target * (items[0]?.offsetHeight || 150)}px)`;
+    if(current === 2) highlightPortOnMap(target);
+}
+
+function animateWaterListToIdx(idx) {
+    const list = document.getElementById('water-list'); if(!list) return;
+    const cards = list.querySelectorAll('.water-card');
+    cards.forEach(c => c.classList.remove('active'));
+    const target = idx % WATERS.length;
+    if(cards[target]) { cards[target].classList.add('active'); list.style.transform = `translateY(-${Math.max(0, target-1) * (cards[0]?.offsetHeight || 170)}px)`; }
+    if(current === 3) highlightWaterOnMap(target);
+}
+
+function animateForecast() { const items = document.querySelectorAll('#fc-grid .fc-card'); if(!items.length) return; items.forEach(it => it.classList.remove('active')); fcIdx = (fcIdx+1)%items.length; items[fcIdx].classList.add('active'); }
+function animatePortList() { const others = PORTS.filter(p => !p.main); portIdx = (portIdx+1) % others.length; animatePortListToIdx(portIdx); }
+function animateWaterList() { waterIdx = (waterIdx+1) % WATERS.length; animateWaterListToIdx(waterIdx); }
+
+// ============================================
+// SLIDES
+// ============================================
+function showSlide(n) {
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    document.getElementById('slide-' + n)?.classList.add('active');
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === n-1));
+    document.getElementById('dot-label').textContent = `${n}/${total} ${LABELS[n-1]}`;
+    setTimeout(() => {
+        if(n === 2 && mapPort) { mapPort.invalidateSize(); mapPort.setView([1.5, 104.0], 7); highlightPortOnMap(portIdx); }
+        if(n === 3 && mapSea) { mapSea.invalidateSize(); mapSea.fitBounds(KEPRI_BOUNDS); setTimeout(() => highlightWaterOnMap(waterIdx), 300); }
+    }, 100);
+    if(n === 4) updateRadar();
+    if(n === 5) updateModel();
+    if(n === 6) { const sat = document.getElementById('sat-img'); if(sat) sat.src = 'https://inderaja.bmkg.go.id/IMAGE/HIMA/H08_EH_Kepri.png?' + Date.now(); }
+}
+
+function nextSlide() { if(isPaused) return; current = current >= total ? 1 : current + 1; showSlide(current); }
+function goNextSlide() { current = current >= total ? 1 : current + 1; showSlide(current); resetTimer(); }
+function prevSlide() { current = current <= 1 ? total : current - 1; showSlide(current); resetTimer(); }
+function goSlide(n) { current = n; showSlide(n); resetTimer(); }
+function resetTimer() { clearInterval(timer); timer = setInterval(nextSlide, slideSpeed); }
+
+function togglePause() { isPaused = !isPaused; const btn = document.getElementById('btn-pause'), ind = document.getElementById('pause-indicator'); if(isPaused) { btn?.classList.add('active'); if(btn) btn.innerHTML = '<i class="fas fa-play"></i>'; ind?.classList.add('show'); } else { btn?.classList.remove('active'); if(btn) btn.innerHTML = '<i class="fas fa-pause"></i>'; ind?.classList.remove('show'); } }
+function zoomPage(factor) { pageZoom *= factor; pageZoom = Math.max(0.5, Math.min(2, pageZoom)); document.body.style.transform = `scale(${pageZoom})`; document.body.style.transformOrigin = 'top left'; document.body.style.width = (100/pageZoom) + '%'; }
+function openModal() { document.getElementById('modal').style.display = 'flex'; }
+function saveSettings() { slideSpeed = document.getElementById('inp-speed').value * 1000; AUTO_REFRESH_INTERVAL = document.getElementById('inp-refresh').value * 60 * 1000; resetTimer(); document.getElementById('modal').style.display = 'none'; }
+
+// ============================================
+// INIT
+// ============================================
+async function init() {
+    updateClock(); setInterval(updateClock, 1000);
+    initMaps();
+    await loadData();
+    showSlide(1);
+    timer = setInterval(nextSlide, slideSpeed);
+    setInterval(animateForecast, 3000);
+    setInterval(animatePortList, 4000);
+    setInterval(animateWaterList, 5000);
+    setInterval(cycleModel, 5000);
+    setInterval(autoRefresh, 60000);
+    
+    // Reload AWS data every 1 minute
+    setInterval(loadAWSData, 60000);
+}
+
+document.getElementById('modal')?.addEventListener('click', function(e) { if(e.target === this) this.style.display = 'none'; });
+window.addEventListener('resize', () => { if(mapPort) mapPort.invalidateSize(); if(mapSea) mapSea.invalidateSize(); });
+window.onload = init;
+</script>
+</body>
+</html>
